@@ -1,0 +1,10 @@
+# Netlify hosting for the ASX profit calculator (AsxProfitCalculator/).
+[build]
+  base = "AsxProfitCalculator"
+  publish = "public"
+  functions = "netlify/functions"
+
+[[redirects]]
+  from = "/api/price"
+  to = "/.netlify/functions/price"
+  status = 200

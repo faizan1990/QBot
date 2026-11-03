@@ -35,3 +35,12 @@ Brokerage fees and dividends are not included.
 fetches Yahoo Finance through free public CORS relays (allorigins, codetabs, corsproxy.io). These
 can be slow or down at times; if all of them fail, the page asks for the price to be typed in.
 A live copy is published from the `gh-pages` branch.
+
+## Netlify
+
+`netlify.toml` (at the repo root) publishes `public/` and runs the price lookup as a Netlify
+Function at `/api/price`, so prices come straight from Yahoo with no public relays.
+
+To deploy: in Netlify choose **Add new project → Import an existing project → GitHub**, pick this
+repo and branch, and keep the settings it reads from `netlify.toml`. Or with the CLI:
+`npx netlify-cli deploy --prod` from the repo root.
