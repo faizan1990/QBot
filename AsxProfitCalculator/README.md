@@ -28,3 +28,10 @@ endpoint via the small server in `server.js` (browsers can't call it directly). 
 found, the page asks you to type it in, so the calculator still works.
 
 Brokerage fees and dividends are not included.
+
+## Static hosting (GitHub Pages)
+
+`public/index.html` also works on its own, with no server. When `api/price` isn't available it
+fetches Yahoo Finance through free public CORS relays (allorigins, codetabs, corsproxy.io). These
+can be slow or down at times; if all of them fail, the page asks for the price to be typed in.
+A live copy is published from the `gh-pages` branch.
