@@ -1,0 +1,427 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Share Profit Calculator</title>
+  <meta name="description" content="Work out how much you made or lost on ASX shares.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📈</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #f6f3ee;
+      --card: #ffffff;
+      --ink: #1b1d22;
+      --muted: #5a5f6b;
+      --line: #d9d4cb;
+      --field: #fbfaf7;
+      --accent: #1f4fd1;
+      --accent-ink: #ffffff;
+      --focus: #ffb703;
+      --gain: #0b7a3e;
+      --gain-bg: #e4f5ea;
+      --loss: #b42318;
+      --loss-bg: #fdecea;
+      --neutral-bg: #eeebe5;
+      --shadow: 0 1px 2px rgba(20, 20, 30, .06), 0 12px 32px rgba(20, 20, 30, .08);
+    }
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) {
+        --bg: #121418;
+        --card: #1b1e24;
+        --ink: #f2f3f5;
+        --muted: #a9afbb;
+        --line: #343944;
+        --field: #15181d;
+        --accent: #7aa2ff;
+        --accent-ink: #0b1020;
+        --gain: #5fd39a;
+        --gain-bg: #10301f;
+        --loss: #ff8a80;
+        --loss-bg: #3a1714;
+        --neutral-bg: #23272f;
+        --shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 12px 32px rgba(0, 0, 0, .35);
+      }
+    }
+
+    * { box-sizing: border-box; }
+    html { font-size: 20px; }
+    @media (min-width: 640px) { html { font-size: 22px; } }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: "Atkinson Hyperlegible", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+      line-height: 1.45;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    main {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 2rem 16px 3rem;
+    }
+
+    header { margin-bottom: 1.5rem; }
+    h1 {
+      font-size: 2.2rem;
+      line-height: 1.1;
+      margin: 0 0 .35rem;
+      letter-spacing: -.01em;
+    }
+    .lead { margin: 0; color: var(--muted); font-size: 1.05rem; }
+
+    .card {
+      background: var(--card);
+      border-radius: 20px;
+      box-shadow: var(--shadow);
+      padding: 1.5rem;
+    }
+    @media (min-width: 640px) { .card { padding: 2rem; } }
+
+    .field { margin-bottom: 1.5rem; }
+    label, .label {
+      display: block;
+      font-weight: 700;
+      font-size: 1.1rem;
+      margin-bottom: .45rem;
+    }
+    .hint { display: block; color: var(--muted); font-size: .9rem; margin-top: .4rem; min-height: 1.3em; }
+    .hint.ok { color: var(--gain); }
+    .hint.warn { color: var(--loss); }
+
+    input {
+      width: 100%;
+      font: inherit;
+      font-size: 1.5rem;
+      color: var(--ink);
+      background: var(--field);
+      border: 2px solid var(--line);
+      border-radius: 14px;
+      padding: .6rem .8rem;
+      min-height: 3.2rem;
+      transition: border-color .15s;
+    }
+    input::placeholder { color: var(--muted); opacity: .6; }
+    input:hover { border-color: var(--muted); }
+    input:focus { outline: 4px solid var(--focus); outline-offset: 2px; border-color: var(--ink); }
+    input[type="date"] { font-size: 1.3rem; }
+    input[type="date"]::-webkit-calendar-picker-indicator { transform: scale(1.6); cursor: pointer; }
+    input[aria-invalid="true"] { border-color: var(--loss); }
+
+    #code { text-transform: uppercase; letter-spacing: .06em; font-weight: 700; }
+
+    .money { position: relative; }
+    .money span {
+      position: absolute; left: .85rem; top: 50%; transform: translateY(-50%);
+      font-size: 1.5rem; color: var(--muted); pointer-events: none;
+    }
+    .money input { padding-left: 2rem; }
+
+    .pair {
+      display: grid;
+      gap: 1rem;
+      grid-template-columns: 1fr;
+      margin-bottom: 1.5rem;
+    }
+    @media (min-width: 640px) { .pair { grid-template-columns: 1fr 1fr; } }
+
+    fieldset {
+      margin: 0;
+      border: 2px solid var(--line);
+      border-radius: 16px;
+      padding: 1rem 1rem .25rem;
+      min-width: 0;
+    }
+    legend {
+      font-size: 1.25rem;
+      font-weight: 700;
+      padding: 0 .4rem;
+    }
+    fieldset .field { margin-bottom: 1rem; }
+    fieldset label { font-size: 1rem; }
+
+    .result {
+      border-radius: 16px;
+      padding: 1.5rem;
+      text-align: center;
+      background: var(--neutral-bg);
+      transition: background-color .25s;
+    }
+    .result.gain { background: var(--gain-bg); }
+    .result.loss { background: var(--loss-bg); }
+    .result-label { font-size: 1.2rem; font-weight: 700; margin: 0; }
+    .result-amount {
+      font-size: clamp(2.4rem, 11vw, 3.6rem);
+      font-weight: 700;
+      line-height: 1.1;
+      margin: .3rem 0;
+      font-variant-numeric: tabular-nums;
+      word-break: break-word;
+    }
+    .gain .result-amount, .gain .result-pct { color: var(--gain); }
+    .loss .result-amount, .loss .result-pct { color: var(--loss); }
+    .result-pct { font-size: 1.3rem; font-weight: 700; margin: 0; }
+    .result-text { margin: .8rem 0 0; color: var(--muted); font-size: 1rem; }
+
+    .actions { margin-top: 1.25rem; text-align: center; }
+    button {
+      font: inherit;
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--ink);
+      background: transparent;
+      border: 2px solid var(--line);
+      border-radius: 999px;
+      padding: .6rem 1.4rem;
+      min-height: 3rem;
+      cursor: pointer;
+    }
+    button:hover { border-color: var(--ink); }
+    button:focus-visible { outline: 4px solid var(--focus); outline-offset: 2px; }
+
+    footer { margin-top: 1.5rem; color: var(--muted); font-size: .85rem; text-align: center; }
+
+    .sr-only {
+      position: absolute; width: 1px; height: 1px; overflow: hidden;
+      clip: rect(0 0 0 0); white-space: nowrap;
+    }
+
+    @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <h1>Share Profit Calculator</h1>
+      <p class="lead">Find out how much you made on ASX shares.</p>
+    </header>
+
+    <form class="card" id="calc" novalidate autocomplete="off" onsubmit="return false">
+      <div class="field">
+        <label for="code">Share code</label>
+        <input id="code" name="code" placeholder="e.g. BHP" maxlength="6"
+               autocapitalize="characters" spellcheck="false" aria-describedby="code-hint">
+        <span class="hint" id="code-hint">The short ASX code, like CBA or BHP</span>
+      </div>
+
+      <div class="field">
+        <label for="qty">Number of shares</label>
+        <input id="qty" name="qty" inputmode="numeric" placeholder="e.g. 100" aria-describedby="qty-hint">
+        <span class="hint" id="qty-hint"></span>
+      </div>
+
+      <div class="pair">
+        <fieldset>
+          <legend>Bought</legend>
+          <div class="field">
+            <label for="buyDate">Date</label>
+            <input id="buyDate" name="buyDate" type="date">
+          </div>
+          <div class="field">
+            <label for="buyPrice">Price per share</label>
+            <div class="money">
+              <span aria-hidden="true">$</span>
+              <input id="buyPrice" name="buyPrice" inputmode="decimal" placeholder="0.00" aria-describedby="buy-hint">
+            </div>
+            <span class="hint" id="buy-hint" aria-live="polite"></span>
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend>Sold</legend>
+          <div class="field">
+            <label for="sellDate">Date</label>
+            <input id="sellDate" name="sellDate" type="date">
+          </div>
+          <div class="field">
+            <label for="sellPrice">Price per share</label>
+            <div class="money">
+              <span aria-hidden="true">$</span>
+              <input id="sellPrice" name="sellPrice" inputmode="decimal" placeholder="0.00" aria-describedby="sell-hint">
+            </div>
+            <span class="hint" id="sell-hint" aria-live="polite"></span>
+          </div>
+        </fieldset>
+      </div>
+
+      <section class="result" id="result" aria-live="polite" aria-atomic="true">
+        <p class="result-label" id="result-label">Profit</p>
+        <p class="result-amount" id="result-amount">$0.00</p>
+        <p class="result-pct" id="result-pct">&nbsp;</p>
+        <p class="result-text" id="result-text">Fill in the boxes above to see your profit.</p>
+      </section>
+
+      <div class="actions">
+        <button type="button" id="reset">Start again</button>
+      </div>
+    </form>
+
+    <footer>
+      Prices are the closing price on the day (or the last trading day before it).
+      Brokerage fees and dividends are not included.
+    </footer>
+  </main>
+
+  <script>
+    (function () {
+      const $ = (id) => document.getElementById(id);
+      const els = {
+        code: $('code'), qty: $('qty'),
+        buyDate: $('buyDate'), sellDate: $('sellDate'),
+        buyPrice: $('buyPrice'), sellPrice: $('sellPrice'),
+        codeHint: $('code-hint'), qtyHint: $('qty-hint'),
+        buyHint: $('buy-hint'), sellHint: $('sell-hint'),
+        result: $('result'), label: $('result-label'), amount: $('result-amount'),
+        pct: $('result-pct'), text: $('result-text'),
+      };
+      const CODE_HINT = els.codeHint.textContent;
+
+      const money = new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD' });
+      const sharePrice = new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD', minimumFractionDigits: 2, maximumFractionDigits: 3 });
+      const whole = new Intl.NumberFormat('en-AU');
+      const longDate = new Intl.DateTimeFormat('en-AU', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' });
+      const fmtDate = (iso) => longDate.format(new Date(iso + 'T00:00:00Z'));
+
+      // Today in Sydney, so the date pickers can't go into the future.
+      const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Australia/Sydney' }).format(new Date());
+      els.buyDate.max = today;
+      els.sellDate.max = today;
+      els.sellDate.value = today;
+
+      const parseNum = (s) => {
+        const n = parseFloat(String(s).replace(/[$,\s]/g, ''));
+        return isFinite(n) ? n : NaN;
+      };
+      const cleanCode = () => els.code.value.trim().toUpperCase().replace(/\.AX$/, '');
+
+      // ---------- Price lookup ----------
+      const lookups = { buy: 0, sell: 0 };
+
+      async function lookup(side) {
+        const dateEl = side === 'buy' ? els.buyDate : els.sellDate;
+        const priceEl = side === 'buy' ? els.buyPrice : els.sellPrice;
+        const hint = side === 'buy' ? els.buyHint : els.sellHint;
+        const code = cleanCode();
+        const date = dateEl.value;
+        const ticket = ++lookups[side];
+
+        if (!code || !date) { setHint(hint, ''); return; }
+
+        setHint(hint, 'Looking up price…');
+        try {
+          const res = await fetch(`api/price?code=${encodeURIComponent(code)}&date=${encodeURIComponent(date)}`);
+          const data = await res.json().catch(() => ({}));
+          if (ticket !== lookups[side]) return; // a newer lookup has started
+
+          if (res.ok && typeof data.close === 'number') {
+            priceEl.value = data.close.toFixed(data.close < 1 ? 3 : 2);
+            const closed = data.tradingDate !== date;
+            setHint(hint, closed
+              ? `Market closed that day. Price from ${fmtDate(data.tradingDate)}.`
+              : `Closing price on ${fmtDate(data.tradingDate)}`, 'ok');
+            if (data.name) showCompany(data.name);
+          } else if (res.status === 404 && data.error === 'not_found') {
+            setHint(hint, 'Price not found. Please type it in.', 'warn');
+            setHint(els.codeHint, `We couldn't find "${code}" on the ASX. Check the code.`, 'warn');
+            els.code.setAttribute('aria-invalid', 'true');
+          } else {
+            setHint(hint, 'No price for that date. Please type it in.', 'warn');
+          }
+        } catch (e) {
+          if (ticket !== lookups[side]) return;
+          setHint(hint, "Couldn't look up the price. Please type it in.", 'warn');
+        }
+        calculate();
+      }
+
+      function showCompany(name) {
+        els.code.removeAttribute('aria-invalid');
+        setHint(els.codeHint, name, 'ok');
+      }
+
+      function setHint(el, text, kind) {
+        el.textContent = text;
+        el.className = 'hint' + (kind ? ' ' + kind : '');
+      }
+
+      // ---------- Profit ----------
+      function calculate() {
+        const qtyRaw = els.qty.value.trim();
+        const qty = parseNum(qtyRaw);
+        const buy = parseNum(els.buyPrice.value);
+        const sell = parseNum(els.sellPrice.value);
+
+        const qtyBad = qtyRaw !== '' && !(qty > 0);
+        els.qty.setAttribute('aria-invalid', qtyBad);
+        setHint(els.qtyHint, qtyBad ? 'Please enter a number above 0.' : '', qtyBad ? 'warn' : '');
+
+        const datesBad = els.buyDate.value && els.sellDate.value && els.sellDate.value < els.buyDate.value;
+        els.sellDate.setAttribute('aria-invalid', !!datesBad);
+
+        if (datesBad) {
+          return showResult('neutral', 'Profit', '—', '', 'The sell date is before the buy date. Please check the dates.');
+        }
+        if (!(qty > 0) || !(buy > 0) || !(sell >= 0) || els.sellPrice.value.trim() === '') {
+          return showResult('neutral', 'Profit', '$0.00', '', 'Fill in the boxes above to see your profit.');
+        }
+
+        const cost = qty * buy;
+        const value = qty * sell;
+        const profit = value - cost;
+        const pct = (profit / cost) * 100;
+        const name = cleanCode() || 'shares';
+        const shares = `${whole.format(qty)} ${name} share${qty === 1 ? '' : 's'}`;
+        const sentence = `You paid ${money.format(cost)} for ${shares} (${sharePrice.format(buy)} each) ` +
+          `and sold them for ${money.format(value)} (${sharePrice.format(sell)} each).`;
+
+        if (Math.abs(profit) < 0.005) {
+          showResult('neutral', 'No profit or loss', money.format(0), 'You broke even', sentence);
+        } else if (profit > 0) {
+          showResult('gain', 'Your profit', '+' + money.format(profit), `▲ Up ${pct.toFixed(1)}%`, sentence);
+        } else {
+          showResult('loss', 'Your loss', '−' + money.format(-profit), `▼ Down ${Math.abs(pct).toFixed(1)}%`, sentence);
+        }
+      }
+
+      function showResult(kind, label, amount, pct, text) {
+        els.result.className = 'result' + (kind === 'neutral' ? '' : ' ' + kind);
+        els.label.textContent = label;
+        els.amount.textContent = amount;
+        els.pct.innerHTML = pct ? pct : '&nbsp;';
+        els.text.textContent = text;
+      }
+
+      // ---------- Wiring ----------
+      let codeTimer;
+      els.code.addEventListener('input', () => {
+        els.code.value = els.code.value.toUpperCase().replace(/[^A-Z0-9.]/g, '');
+        els.code.removeAttribute('aria-invalid');
+        setHint(els.codeHint, CODE_HINT);
+        clearTimeout(codeTimer);
+        codeTimer = setTimeout(() => { lookup('buy'); lookup('sell'); }, 600);
+        calculate();
+      });
+      els.buyDate.addEventListener('change', () => { lookup('buy'); calculate(); });
+      els.sellDate.addEventListener('change', () => { lookup('sell'); calculate(); });
+      [els.qty, els.buyPrice, els.sellPrice].forEach((el) => el.addEventListener('input', calculate));
+
+      $('reset').addEventListener('click', () => {
+        lookups.buy++; lookups.sell++;
+        clearTimeout(codeTimer);
+        ['code', 'qty', 'buyDate', 'buyPrice', 'sellPrice'].forEach((k) => { els[k].value = ''; els[k].removeAttribute('aria-invalid'); });
+        els.sellDate.value = today;
+        [els.buyHint, els.sellHint, els.qtyHint].forEach((h) => setHint(h, ''));
+        setHint(els.codeHint, CODE_HINT);
+        calculate();
+        els.code.focus();
+      });
+
+      calculate();
+    })();
+  </script>
+</body>
+</html>

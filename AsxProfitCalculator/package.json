@@ -1,0 +1,13 @@
+{
+  "name": "asx-profit-calculator",
+  "version": "1.0.0",
+  "description": "Simple, large-text calculator for profit on ASX shares using historical prices",
+  "main": "server.js",
+  "private": true,
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
